@@ -7,3 +7,4 @@ This is a playground to understand and learn graphics programming.
 ### Features Implemented:
 - Shader Compilation
 - Shader Error Handling
+- External Shader File Parsing
