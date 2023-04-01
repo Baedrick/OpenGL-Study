@@ -16,7 +16,7 @@ static unsigned int CompileShader(unsigned int type, const std::string& source)
     {
         int length;
         glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
-        char* message = static_cast<char*>(alloca(length * sizeof(char)));
+        char* message = static_cast<char*>(malloc(length * sizeof(char)));
         glGetShaderInfoLog(id, length, &length, message);
 
         std::cout << "Failed to compile " << 
