@@ -8,3 +8,4 @@ This is a playground to understand and learn graphics programming.
 - Shader Compilation
 - Shader Error Handling
 - External Shader File Parsing
+- Index Buffer
