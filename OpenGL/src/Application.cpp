@@ -7,6 +7,7 @@
 #include <sstream>
 
 #define DEBUG_MODE
+#define ASSERT(x) if (!(x)) __debugbreak();
 
 #if defined (DEBUG_MODE)
 void GLAPIENTRY GLDebugMessageCallback(unsigned int source,
@@ -201,6 +202,9 @@ int main(void)
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
 
+    /* V-sync */
+    glfwSwapInterval(1);
+
     if (glewInit() != GLEW_OK)
         std::cout << "Error" << std::endl;
 
@@ -221,7 +225,7 @@ int main(void)
     unsigned int buffer;
     glGenBuffers(1, &buffer);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(float), positions, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), positions, GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
@@ -235,6 +239,13 @@ int main(void)
     unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
     glUseProgram(shader);
 
+    int location = glGetUniformLocation(shader, "u_Color");
+    ASSERT(location != -1);
+    glUniform4f(location, 1.0f, 0.0f, 0.0f, 1.0f);
+
+    float r = 0.0f;
+    float increment = 0.05f;
+
 #if defined (DEBUG_MODE)
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(GLDebugMessageCallback, 0);
@@ -245,13 +256,27 @@ int main(void)
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
+        glUniform4f(location, r, 0.0f, 0.0f, 1.0f);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+
+        if (r > 1.0f) {
+            increment = -0.05f;
+        }
+        else if (r < 0.0f) {
+            increment = 0.05f;
+        }
+        r += increment;
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 
         /* Poll for and process events */
         glfwPollEvents();
+
+#if defined (DEBUG_MODE)
+        glEnable(GL_DEBUG_OUTPUT);
+        glDebugMessageCallback(GLDebugMessageCallback, 0);
+#endif
     }
 
     glDeleteProgram(shader);
