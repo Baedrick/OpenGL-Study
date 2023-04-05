@@ -9,3 +9,4 @@ This is a playground to understand and learn graphics programming.
 - Shader Error Handling
 - External Shader File Parsing
 - Index Buffer
+- Debug Callback
