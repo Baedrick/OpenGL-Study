@@ -15,83 +15,93 @@ void GLAPIENTRY GLDebugMessageCallback(unsigned int source,
                                        unsigned int id,
                                        unsigned int severity,
                                        int length,
-                                       const char* msg,
+                                       const char* message,
                                        const void* data)
 {
-    const char* _source;
-    const char* _type;
-    const char* _severity;
+    if (id == 131169 || id == 131185 || id == 131218 || id == 131204)
+        return;
+
+    std::cout << "---------------" << std::endl;
+    std::cout << "Debug message (" << id << "): " << message << std::endl;
 
     switch (source) {
         case GL_DEBUG_SOURCE_API:
-            _source = "API";
+            std::cout << "Source: API" << std::endl;
             break;
         case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
-            _source = "WINDOW SYSTEM";
+            std::cout << "Source: Window System" << std::endl;
             break;
         case GL_DEBUG_SOURCE_SHADER_COMPILER:
-            _source = "SHADER COMPILER";
+            std::cout << "Source: Shader Compiler" << std::endl;
             break;
         case GL_DEBUG_SOURCE_THIRD_PARTY:
-            _source = "THIRD PARTY";
+            std::cout << "Source: Third Party" << std::endl;
             break;
         case GL_DEBUG_SOURCE_APPLICATION:
-            _source = "UNKNOWN";
+            std::cout << "Source: Application" << std::endl;
+            break;
+        case GL_DEBUG_SOURCE_OTHER:
+            std::cout << "Source: Other" << std::endl;
             break;
         default:
-            _source = "UNKNOWN";
+            std::cout << "Source: Unknown" << std::endl;
             break;
     }
 
-    switch (type) {
+    switch (type)
+    {
         case GL_DEBUG_TYPE_ERROR:
-            _type = "ERROR";
+            std::cout << "Type: Error" << std::endl;
             break;
         case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-            _type = "DEPRECATED BEHAVIOR";
+            std::cout << "Type: Deprecated Behaviour" << std::endl;
             break;
         case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-            _type = "UNDEFINED BEHAVIOR";
+            std::cout << "Type: Undefined Behaviour" << std::endl;
             break;
         case GL_DEBUG_TYPE_PORTABILITY:
-            _type = "PORTABILITY";
+            std::cout << "Type: Portability" << std::endl;
             break;
         case GL_DEBUG_TYPE_PERFORMANCE:
-            _type = "PERFORMANCE";
-            break;
-        case GL_DEBUG_TYPE_OTHER:
-            _type = "OTHER";
+            std::cout << "Type: Performance" << std::endl;
             break;
         case GL_DEBUG_TYPE_MARKER:
-            _type = "MARKER";
+            std::cout << "Type: Marker" << std::endl;
+            break;
+        case GL_DEBUG_TYPE_PUSH_GROUP:
+            std::cout << "Type: Push Group" << std::endl;
+            break;
+        case GL_DEBUG_TYPE_POP_GROUP:
+            std::cout << "Type: Pop Group" << std::endl;
+            break;
+        case GL_DEBUG_TYPE_OTHER:
+            std::cout << "Type: Other" << std::endl;
             break;
         default:
-            _type = "UNKNOWN";
+            std::cout << "Type: Unknown" << std::endl;
             break;
     }
 
-    switch (severity) {
+    switch (severity)
+    {
         case GL_DEBUG_SEVERITY_HIGH:
-            _severity = "HIGH";
+            std::cout << "Severity: high" << std::endl;
             break;
         case GL_DEBUG_SEVERITY_MEDIUM:
-            _severity = "MEDIUM";
+            std::cout << "Severity: medium" << std::endl;
             break;
         case GL_DEBUG_SEVERITY_LOW:
-            _severity = "LOW";
+            std::cout << "Severity: low" << std::endl;
             break;
         case GL_DEBUG_SEVERITY_NOTIFICATION:
-            _severity = "NOTIFICATION";
+            std::cout << "Severity: notification" << std::endl;
             break;
         default:
-            _severity = "UNKNOWN";
+            std::cout << "Severity: Unknown" << std::endl;
             break;
     }
 
-    printf("%d: %s of %s severity, raised from %s: %s\n",
-        id, _type, _severity, _source, msg);
-
-    __debugbreak(); // MSVC Compiler only
+    //__debugbreak(); // MSVC Compiler only
 }
 #endif
 
@@ -192,6 +202,14 @@ int main(void)
     if (!glfwInit())
         return -1;
 
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+#if defined (DEBUG_MODE)
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+#endif
+
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
     if (!window) {
@@ -203,7 +221,7 @@ int main(void)
     glfwMakeContextCurrent(window);
 
     /* V-sync */
-    glfwSwapInterval(1);
+    // glfwSwapInterval(1);
 
     if (glewInit() != GLEW_OK)
         std::cout << "Error" << std::endl;
@@ -243,6 +261,10 @@ int main(void)
     ASSERT(location != -1);
     glUniform4f(location, 1.0f, 0.0f, 0.0f, 1.0f);
 
+    glUseProgram(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
     float r = 0.0f;
     float increment = 0.05f;
 
@@ -256,7 +278,14 @@ int main(void)
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
+        glUseProgram(shader);
         glUniform4f(location, r, 0.0f, 0.0f, 1.0f);
+
+        glBindBuffer(GL_ARRAY_BUFFER, buffer);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
         if (r > 1.0f) {
@@ -272,11 +301,6 @@ int main(void)
 
         /* Poll for and process events */
         glfwPollEvents();
-
-#if defined (DEBUG_MODE)
-        glEnable(GL_DEBUG_OUTPUT);
-        glDebugMessageCallback(GLDebugMessageCallback, 0);
-#endif
     }
 
     glDeleteProgram(shader);
