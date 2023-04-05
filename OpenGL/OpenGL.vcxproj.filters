@@ -20,6 +20,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="res\shaders\Default.glsl" />
+    <None Include="res\shaders\Default.shader" />
   </ItemGroup>
 </Project>
