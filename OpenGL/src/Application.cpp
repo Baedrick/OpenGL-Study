@@ -6,6 +6,92 @@
 #include <string>
 #include <sstream>
 
+#define DEBUG_MODE
+
+#if defined (DEBUG_MODE)
+void GLAPIENTRY GLDebugMessageCallback(unsigned int source,
+                                       unsigned int type,
+                                       unsigned int id,
+                                       unsigned int severity,
+                                       int length,
+                                       const char* msg,
+                                       const void* data)
+{
+    const char* _source;
+    const char* _type;
+    const char* _severity;
+
+    switch (source) {
+        case GL_DEBUG_SOURCE_API:
+            _source = "API";
+            break;
+        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+            _source = "WINDOW SYSTEM";
+            break;
+        case GL_DEBUG_SOURCE_SHADER_COMPILER:
+            _source = "SHADER COMPILER";
+            break;
+        case GL_DEBUG_SOURCE_THIRD_PARTY:
+            _source = "THIRD PARTY";
+            break;
+        case GL_DEBUG_SOURCE_APPLICATION:
+            _source = "UNKNOWN";
+            break;
+        default:
+            _source = "UNKNOWN";
+            break;
+    }
+
+    switch (type) {
+        case GL_DEBUG_TYPE_ERROR:
+            _type = "ERROR";
+            break;
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+            _type = "DEPRECATED BEHAVIOR";
+            break;
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+            _type = "UNDEFINED BEHAVIOR";
+            break;
+        case GL_DEBUG_TYPE_PORTABILITY:
+            _type = "PORTABILITY";
+            break;
+        case GL_DEBUG_TYPE_PERFORMANCE:
+            _type = "PERFORMANCE";
+            break;
+        case GL_DEBUG_TYPE_OTHER:
+            _type = "OTHER";
+            break;
+        case GL_DEBUG_TYPE_MARKER:
+            _type = "MARKER";
+            break;
+        default:
+            _type = "UNKNOWN";
+            break;
+    }
+
+    switch (severity) {
+        case GL_DEBUG_SEVERITY_HIGH:
+            _severity = "HIGH";
+            break;
+        case GL_DEBUG_SEVERITY_MEDIUM:
+            _severity = "MEDIUM";
+            break;
+        case GL_DEBUG_SEVERITY_LOW:
+            _severity = "LOW";
+            break;
+        case GL_DEBUG_SEVERITY_NOTIFICATION:
+            _severity = "NOTIFICATION";
+            break;
+        default:
+            _severity = "UNKNOWN";
+            break;
+    }
+
+    printf("%d: %s of %s severity, raised from %s: %s\n",
+        id, _type, _severity, _source, msg);
+}
+#endif
+
 struct ShaderProgramSource
 {
     std::string VertexSource;
@@ -18,33 +104,28 @@ static ShaderProgramSource ParseShader(const std::string& filepath)
 
     enum class ShaderType
     {
-        None = -1,
+        NONE = -1,
         VERTEX = 0,
         FRAGMENT = 1
     };
 
     std::string line;
     std::stringstream ss[2];
-    ShaderType type = ShaderType::None;
-    while (getline(stream, line))
-    {
-        if (line.length() == 0) // handles empty lines at start
-        {
-            continue;
+    ShaderType type = ShaderType::NONE;
+
+    while (getline(stream, line)) {
+        if (line.length() == 0) {
+            continue; // handles empty lines at start
         }
-        if (line.find("#shader") != std::string::npos)
-        {
-            if (line.find("vertex") != std::string::npos)
-            {
+        if (line.find("#shader") != std::string::npos) {
+            if (line.find("vertex") != std::string::npos) {
                 type = ShaderType::VERTEX;
             }
-            else if (line.find("fragment") != std::string::npos)
-            {
+            else if (line.find("fragment") != std::string::npos) {
                 type = ShaderType::FRAGMENT;
             }
         }
-        else
-        {
+        else {
             ss[static_cast<int>(type)] << line << '\n';
         }
     }
@@ -64,16 +145,15 @@ static unsigned int CompileShader(unsigned int type, const std::string& source)
 
     int result;
     glGetShaderiv(id, GL_COMPILE_STATUS, &result);
-    if (result == GL_FALSE)
-    {
+    if (result == GL_FALSE) {
         int length;
         glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
         char* message = static_cast<char*>(malloc(length * sizeof(char)));
         glGetShaderInfoLog(id, length, &length, message);
 
-        std::cout << "Failed to compile " << 
+        std::cout << "Failed to compile " <<
             (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << " shader!"
-        << std::endl;
+            << std::endl;
         std::cout << message << std::endl;
         glDeleteShader(id);
         return 0;
@@ -111,8 +191,7 @@ int main(void)
 
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
-    if (!window)
-    {
+    if (!window) {
         glfwTerminate();
         return -1;
     }
@@ -127,9 +206,9 @@ int main(void)
 
     float positions[] = {
         -0.5f, -0.5f,
-         0.5f, -0.5f,
-         0.5f,  0.5f,
-        -0.5f,  0.5f
+        0.5f, -0.5f,
+        0.5f, 0.5f,
+        -0.5f, 0.5f
     };
 
     unsigned int indices[] = {
@@ -155,8 +234,7 @@ int main(void)
     glUseProgram(shader);
 
     /* Loop until the user closes the window */
-    while (!glfwWindowShouldClose(window))
-    {
+    while (!glfwWindowShouldClose(window)) {
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -167,6 +245,11 @@ int main(void)
 
         /* Poll for and process events */
         glfwPollEvents();
+
+#if defined (DEBUG_MODE)
+        glEnable(GL_DEBUG_OUTPUT);
+        glDebugMessageCallback(GLDebugMessageCallback, 0);
+#endif
     }
 
     glDeleteProgram(shader);
