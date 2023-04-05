@@ -89,6 +89,8 @@ void GLAPIENTRY GLDebugMessageCallback(unsigned int source,
 
     printf("%d: %s of %s severity, raised from %s: %s\n",
         id, _type, _severity, _source, msg);
+
+    __debugbreak(); // MSVC Compiler only
 }
 #endif
 
@@ -233,6 +235,11 @@ int main(void)
     unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
     glUseProgram(shader);
 
+#if defined (DEBUG_MODE)
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback(GLDebugMessageCallback, 0);
+#endif
+
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window)) {
         /* Render here */
@@ -245,11 +252,6 @@ int main(void)
 
         /* Poll for and process events */
         glfwPollEvents();
-
-#if defined (DEBUG_MODE)
-        glEnable(GL_DEBUG_OUTPUT);
-        glDebugMessageCallback(GLDebugMessageCallback, 0);
-#endif
     }
 
     glDeleteProgram(shader);
