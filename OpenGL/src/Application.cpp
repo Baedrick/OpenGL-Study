@@ -288,7 +288,6 @@ int main(void)
         glUniform4f(location, r, 0.0f, 0.0f, 1.0f);
 
         glBindVertexArray(vao);
-        //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
