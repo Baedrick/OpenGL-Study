@@ -6,10 +6,9 @@
 #include <string>
 #include <sstream>
 
-#define DEBUG_MODE
 #define ASSERT(x) if (!(x)) __debugbreak();
 
-#if defined (DEBUG_MODE)
+#if defined (_DEBUG)
 void GLAPIENTRY GLDebugMessageCallback(unsigned int source,
                                        unsigned int type,
                                        unsigned int id,
@@ -101,7 +100,7 @@ void GLAPIENTRY GLDebugMessageCallback(unsigned int source,
             break;
     }
 
-    //__debugbreak(); // MSVC Compiler only
+    __debugbreak(); // MSVC Compiler only
 }
 #endif
 
@@ -202,11 +201,11 @@ int main(void)
     if (!glfwInit())
         return -1;
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-#if defined (DEBUG_MODE)
+#if defined (_DEBUG)
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 #endif
 
@@ -240,6 +239,10 @@ int main(void)
         2, 3, 0
     };
 
+    unsigned int vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
     unsigned int buffer;
     glGenBuffers(1, &buffer);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
@@ -261,6 +264,7 @@ int main(void)
     ASSERT(location != -1);
     glUniform4f(location, 1.0f, 0.0f, 0.0f, 1.0f);
 
+    glBindVertexArray(0);
     glUseProgram(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -268,9 +272,11 @@ int main(void)
     float r = 0.0f;
     float increment = 0.05f;
 
-#if defined (DEBUG_MODE)
+#if defined (_DEBUG)
     glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(GLDebugMessageCallback, 0);
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 #endif
 
     /* Loop until the user closes the window */
@@ -281,11 +287,9 @@ int main(void)
         glUseProgram(shader);
         glUniform4f(location, r, 0.0f, 0.0f, 1.0f);
 
-        glBindBuffer(GL_ARRAY_BUFFER, buffer);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
-
+        glBindVertexArray(vao);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
         if (r > 1.0f) {
