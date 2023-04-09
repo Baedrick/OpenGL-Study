@@ -1,108 +1,20 @@
+// Paired header file
+
+// Other headers in project
+#include "Renderer.h"
+#include "VertexArray.h"
+#include "VertexBuffer.h"
+#include "IndexBuffer.h"
+
+// Third party library headers
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+// Standard library headers
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <sstream>
-
-#define ASSERT(x) if (!(x)) __debugbreak();
-
-#if defined (_DEBUG)
-void GLAPIENTRY GLDebugMessageCallback(unsigned int source,
-                                       unsigned int type,
-                                       unsigned int id,
-                                       unsigned int severity,
-                                       int length,
-                                       const char* message,
-                                       const void* data)
-{
-    if (id == 131169 || id == 131185 || id == 131218 || id == 131204)
-        return;
-
-    std::cout << "---------------" << std::endl;
-    std::cout << "Debug message (" << id << "): " << message << std::endl;
-
-    switch (source) {
-        case GL_DEBUG_SOURCE_API:
-            std::cout << "Source: API" << std::endl;
-            break;
-        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
-            std::cout << "Source: Window System" << std::endl;
-            break;
-        case GL_DEBUG_SOURCE_SHADER_COMPILER:
-            std::cout << "Source: Shader Compiler" << std::endl;
-            break;
-        case GL_DEBUG_SOURCE_THIRD_PARTY:
-            std::cout << "Source: Third Party" << std::endl;
-            break;
-        case GL_DEBUG_SOURCE_APPLICATION:
-            std::cout << "Source: Application" << std::endl;
-            break;
-        case GL_DEBUG_SOURCE_OTHER:
-            std::cout << "Source: Other" << std::endl;
-            break;
-        default:
-            std::cout << "Source: Unknown" << std::endl;
-            break;
-    }
-
-    switch (type)
-    {
-        case GL_DEBUG_TYPE_ERROR:
-            std::cout << "Type: Error" << std::endl;
-            break;
-        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-            std::cout << "Type: Deprecated Behaviour" << std::endl;
-            break;
-        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-            std::cout << "Type: Undefined Behaviour" << std::endl;
-            break;
-        case GL_DEBUG_TYPE_PORTABILITY:
-            std::cout << "Type: Portability" << std::endl;
-            break;
-        case GL_DEBUG_TYPE_PERFORMANCE:
-            std::cout << "Type: Performance" << std::endl;
-            break;
-        case GL_DEBUG_TYPE_MARKER:
-            std::cout << "Type: Marker" << std::endl;
-            break;
-        case GL_DEBUG_TYPE_PUSH_GROUP:
-            std::cout << "Type: Push Group" << std::endl;
-            break;
-        case GL_DEBUG_TYPE_POP_GROUP:
-            std::cout << "Type: Pop Group" << std::endl;
-            break;
-        case GL_DEBUG_TYPE_OTHER:
-            std::cout << "Type: Other" << std::endl;
-            break;
-        default:
-            std::cout << "Type: Unknown" << std::endl;
-            break;
-    }
-
-    switch (severity)
-    {
-        case GL_DEBUG_SEVERITY_HIGH:
-            std::cout << "Severity: high" << std::endl;
-            break;
-        case GL_DEBUG_SEVERITY_MEDIUM:
-            std::cout << "Severity: medium" << std::endl;
-            break;
-        case GL_DEBUG_SEVERITY_LOW:
-            std::cout << "Severity: low" << std::endl;
-            break;
-        case GL_DEBUG_SEVERITY_NOTIFICATION:
-            std::cout << "Severity: notification" << std::endl;
-            break;
-        default:
-            std::cout << "Severity: Unknown" << std::endl;
-            break;
-    }
-
-    __debugbreak(); // MSVC Compiler only
-}
-#endif
 
 struct ShaderProgramSource
 {
@@ -239,22 +151,14 @@ int main(void)
         2, 3, 0
     };
 
-    unsigned int vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+    VertexArray va;
+    VertexBuffer vb(positions, 4 * 2 * sizeof(float));
 
-    unsigned int buffer;
-    glGenBuffers(1, &buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), positions, GL_STATIC_DRAW);
+    VertexBufferLayout layout;
+    layout.Push<float>(2);
+    va.AddBuffer(vb, layout);
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
-
-    unsigned int ibo; // index buffer object
-    glGenBuffers(1, &ibo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+    IndexBuffer ib(indices, 6);
 
     ShaderProgramSource source = ParseShader("res/shaders/Default.shader");
     unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
@@ -287,7 +191,7 @@ int main(void)
         glUseProgram(shader);
         glUniform4f(location, r, 0.0f, 0.0f, 1.0f);
 
-        glBindVertexArray(vao);
+        va.Bind();
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
